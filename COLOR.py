@@ -18,6 +18,14 @@ def create_color_palette_from_matrix(dominant_colors, palette_size=(300, 50)):
     return palette
 
 
+def normalize_image(image):
+    return np.array(image) / 255.0
+
+
+def denormalize_image(image):
+    return (image * 255).astype(np.uint8)
+
+
 def main():
     st.title("Color Palette and Segmentation Streamlit App")
 
@@ -29,11 +37,13 @@ def main():
         # Display the uploaded image
         st.image(image, caption="Uploaded Image", use_column_width=True)
 
+        # Normalize the image
+        normalized_image = normalize_image(image)
+
         # Reshape the image for KMeans
-        X = np.array(image).reshape(-1, 3)
+        X = normalized_image.reshape(-1, 3)
 
         # Train KMeans algorithm
-        #num_clusters = st.slider("Select the number of clusters", min_value=2, max_value=20, value=3)
         kmeans = KMeans(n_clusters=3)
         kmeans.fit(X)
 
@@ -41,7 +51,7 @@ def main():
         cluster_centers = kmeans.cluster_centers_
 
         # Convert cluster centers to a list of tuples
-        dominant_colors = [tuple(map(int, color)) for color in cluster_centers]
+        dominant_colors = [tuple(map(int, color * 255)) for color in cluster_centers]
 
         # Create and display the color palette
         color_palette = create_color_palette_from_matrix(dominant_colors, palette_size=(300, 50))
@@ -49,7 +59,8 @@ def main():
 
         # Optionally, display the segmented image
         if st.checkbox("Visualize Segmented Image"):
-            segmented_image = cluster_centers[kmeans.labels_].reshape(np.array(image).shape)
+            # Denormalize the segmented image
+            segmented_image = denormalize_image(cluster_centers[kmeans.labels_]).reshape(np.array(image).shape)
             st.image(segmented_image, caption="Segmented Image", use_column_width=True)
 
 
